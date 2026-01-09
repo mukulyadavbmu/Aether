@@ -1,0 +1,40 @@
+# Google Cloud Build configuration
+steps:
+  # Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/aether-backend:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/aether-backend:latest'
+      - '.'
+
+  # Push Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/aether-backend:$COMMIT_SHA'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'aether-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/aether-backend:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'gcr.io/$PROJECT_ID/aether-backend:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/aether-backend:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  timeout: '1200s'

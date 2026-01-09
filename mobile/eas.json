@@ -1,0 +1,42 @@
+{
+  "cli": {
+    "version": ">= 13.2.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "API_URL": "http://10.105.179.92:3000"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "API_URL": "https://aether-backend-xxx-uc.a.run.app"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "API_URL": "https://aether-backend-xxx-uc.a.run.app"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  },
+  "update": {
+    "production": {
+      "channel": "production"
+    },
+    "preview": {
+      "channel": "preview"
+    }
+  }
+}

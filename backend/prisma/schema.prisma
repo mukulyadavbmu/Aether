@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile       Profile?
+  meals         Meal[]
+  activities    Activity[]
+  tasks         Task[]
+  journalLogs   JournalLog[]
+  goals         Goal[]
+  workoutLogs   WorkoutLog[]
+  appUsage      AppUsage[]
+  
+  // Squad relations
+  createdSquads     Squad[]         @relation("SquadCreator")
+  squadMemberships  SquadMember[]
+  sentNudges        Nudge[]         @relation("NudgeSender")
+  receivedNudges    Nudge[]         @relation("NudgeReceiver")
+  invitationsSent   SquadInvite[]   @relation("InviteSender")
+  invitationsReceived SquadInvite[] @relation("InviteReceiver")
+}
+
+model Profile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  age              Int?
+  weight           Float?
+  height           Float?
+  fitnessGoal      String? // 'hypertrophy', 'strength', 'endurance', 'weight_loss'
+  dailyCalorieGoal Int?
+  wakeTime         String?
+  sleepTime        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Meal {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  timestamp   DateTime
+  mealType    String // 'breakfast', 'lunch', 'dinner', 'snack'
+  description String
+  calories    Int
+  protein     Float?
+  carbs       Float?
+  fat         Float?
+  imageUrl    String?
+  aiSuggested Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model Activity {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  startTime    DateTime
+  endTime      DateTime?
+  distance     Float? // in kilometers
+  duration     Int? // in seconds
+  avgSpeed     Float?
+  targetTime   Int? // target time in seconds
+  route        Json? // GeoJSON LineString
+  activityType String @default("run") // 'run', 'walk', 'cycle'
+
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  priority    String   @default("medium") // 'low', 'medium', 'high'
+  deadline    DateTime?
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JournalLog {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date            DateTime @unique
+  rawInput        String // User's voice/text input
+  structuredData  Json // AI-structured hourly table
+  aiRating        Int? // Out of 10
+  aiFeedback      String?
+  aiReview        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        String // 'main', 'weekly', 'daily'
+  title       String
+  description String?
+  targetDate  DateTime?
+  parentId    String? // For hierarchical goals
+  completed   Boolean  @default(false)
+  aiGenerated Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WorkoutLog {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date          DateTime
+  workoutPlan   Json // Exercises, sets, reps, weights
+  completedData Json? // Actual performance
+  notes         String?
+
+  createdAt DateTime @default(now())
+}
+
+model AppUsage {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date        DateTime
+  packageName String
+  appName     String
+  usageTime   Int // in seconds
+  limit       Int? // daily limit in seconds
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, packageName])
+}
+
+// ============ AETHER SQUADS FEATURE ============
+
+model Squad {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  creatorId   String
+  creator     User     @relation("SquadCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  
+  // Shared weekly goal (AI generated)
+  weeklyGoal       String?
+  weeklyGoalTarget Json?   // e.g., { "type": "run", "distance": 30, "unit": "km" }
+  weekStartDate    DateTime?
+  
+  // Squad settings
+  isActive         Boolean  @default(true)
+  maxMembers       Int      @default(10)
+  inviteCode       String   @unique @default(cuid())
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  members     SquadMember[]
+  invites     SquadInvite[]
+  leaderboard SquadProgress[]
+}
+
+model SquadMember {
+  id       String @id @default(uuid())
+  squadId  String
+  squad    Squad  @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  role     String @default("member") // 'creator', 'admin', 'member'
+  joinedAt DateTime @default(now())
+  isActive Boolean  @default(true)
+  
+  // Weekly progress tracking
+  weeklyProgress SquadProgress[]
+  
+  @@unique([squadId, userId])
+}
+
+model SquadProgress {
+  id       String @id @default(uuid())
+  squadId  String
+  squad    Squad  @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  memberId String
+  member   SquadMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  // Progress metrics
+  weekStartDate    DateTime
+  currentProgress  Float    @default(0) // e.g., km run, hours studied
+  targetProgress   Float
+  progressPercent  Float    @default(0)
+  
+  // Engagement metrics
+  cameraAlarmCompleted Boolean @default(false)
+  lastActivityAt       DateTime?
+  streakDays           Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([squadId, memberId, weekStartDate])
+}
+
+model SquadInvite {
+  id          String   @id @default(uuid())
+  squadId     String
+  squad       Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  
+  inviterId   String
+  inviter     User     @relation("InviteSender", fields: [inviterId], references: [id], onDelete: Cascade)
+  
+  // Receiver info (may not be registered yet)
+  receiverEmail String?
+  receiverId    String?
+  receiver      User?    @relation("InviteReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  // Invitation details
+  status          String   @default("pending") // 'pending', 'accepted', 'declined', 'expired'
+  referralToken   String   @unique @default(cuid())
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([receiverEmail])
+  @@index([referralToken])
+}
+
+model Nudge {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("NudgeSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("NudgeReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  message    String   // e.g., "Come on! Don't let the squad down! 💪"
+  type       String   @default("encourage") // 'encourage', 'challenge', 'celebrate'
+  
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  
+  @@index([receiverId, isRead])
+}

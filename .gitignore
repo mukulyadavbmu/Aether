@@ -1,0 +1,76 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+package-lock.json
+
+# Testing
+coverage/
+*.log
+
+# Production
+build/
+dist/
+
+# Environment variables (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+backend/.env
+mobile/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Mobile specific (Expo/React Native)
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+mobile/.expo/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+
+# Backend specific
+backend/dist/
+backend/node_modules/
+backend/data/
+backend/uploads/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+prisma/migrations/*.sql
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Misc
+.cache/
+temp/
+tmp/
+.turbo/
+
+# Documentation that's auto-generated or temporary
+AI_UPDATE_SUMMARY.md
+STATUS.md

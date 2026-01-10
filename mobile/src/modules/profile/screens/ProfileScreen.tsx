@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useAuthStore } from '../../auth/store/authStore';
-import { API_URL } from '../../../config/api';
-import axios from 'axios';
+import api from '../../../services/api';
 import { useTheme } from '../../../context/ThemeContext';
 
 const ProfileScreen = () => {
@@ -30,9 +29,7 @@ const ProfileScreen = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get(`${API_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get('/profile');
       
       if (response.data) {
         setAge(response.data.age?.toString() || '');
@@ -48,21 +45,16 @@ const ProfileScreen = () => {
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
-      await axios.post(
-        `${API_URL}/profile`,
-        {
-          age: age ? parseInt(age) : undefined,
-          weight: weight ? parseFloat(weight) : undefined,
-          height: height ? parseFloat(height) : undefined,
-          dailyCalorieGoal: dailyCalorieGoal ? parseInt(dailyCalorieGoal) : undefined,
-          fitnessGoal,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await api.post('/profile', {
+        age: age ? parseInt(age) : undefined,
+        weight: weight ? parseFloat(weight) : undefined,
+        height: height ? parseFloat(height) : undefined,
+        dailyCalorieGoal: dailyCalorieGoal ? parseInt(dailyCalorieGoal) : undefined,
+        fitnessGoal,
+      });
 
       Alert.alert('Success', 'Profile updated successfully!');
+      fetchProfile();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to update profile');
     } finally {
@@ -77,7 +69,11 @@ const ProfileScreen = () => {
         <Text style={[styles.label, { color: colors.textSecondary }]}>Name</Text>
         <Text style={[styles.value, { color: colors.text }]}>{user?.name}</Text>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
-        <Text style={[styles.value, { color: colors.text }]}>{user?.email}</Text>
+        <Text style={[styleheader, { backgroundColor: colors.card }]}>
+        <Text style={[styles.headerTitle, { color: colors.primary }]}>Profile Settings</Text>
+      </View>
+      
+      <View style={[styles.s.value, { color: colors.text }]}>{user?.email}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -162,7 +158,17 @@ const ProfileScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+coheader: {
+    padding: 20,
+    paddingTop: 16,
+    marginBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  nst styles = StyleSheet.create({
   container: {
     flex: 1,
   },

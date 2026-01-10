@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../auth/store/authStore';
-import { API_URL } from '../../../config/api';
-import axios from 'axios';
+import api from '../../../services/api';
 import StatsChart from '../components/StatsChart';
 import { useTheme } from '../../../context/ThemeContext';
 
@@ -40,9 +39,7 @@ const DashboardScreen = () => {
 
   const fetchTodayRating = async () => {
     try {
-      const response = await axios.get(`${API_URL}/journal/rating/today`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get('/journal/rating/today');
       setDailyRating(response.data);
     } catch (error) {
       // No rating yet
@@ -52,12 +49,8 @@ const DashboardScreen = () => {
   const fetchTodayStats = async () => {
     try {
       const [mealsRes, tasksRes] = await Promise.all([
-        axios.get(`${API_URL}/health/meals/today`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${API_URL}/productivity/tasks`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        api.get('/health/meals/today'),
+        api.get('/productivity/tasks'),
       ]);
 
       const meals = mealsRes.data || [];

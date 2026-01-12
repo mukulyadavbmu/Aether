@@ -12,25 +12,39 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    try {
+      // Check if user already exists
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashedPassword,
-        name: dto.name,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
-      },
-    });
+      if (existingUser) {
+        throw new UnauthorizedException('Email already registered');
+      }
 
-    const token = this.jwt.sign({ sub: user.id, email: user.email });
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    return { user, token };
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          name: dto.name,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true,
+        },
+      });
+
+      const token = this.jwt.sign({ sub: user.id, email: user.email });
+
+      return { user, token };
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   }
 
   async login(dto: LoginDto) {
